@@ -17,17 +17,20 @@ def layer(inputs, weights, biases):
 
     return outputs
 
-# Our training data with an underlying relationship of `output = x * 2 + 1`
+# Our training data with an underlying relationship of `output = (x1 * 2 + x2 * 3) + 1`
 training_data = [
-    (1, 3),
-    (2, 5),
-    (3, 7),
-    (4, 9),
-    (5, 11),
+    ([1, 2], 9),
+    ([2, 1], 8),
+    ([3, 2], 13),
+    ([4, 1], 12),
+    ([5, 3], 20),
 ]
 
 # Our training data has to input values therefore we need 1 weights
-weight = random.random()
+weights = [
+    random.random(),
+    random.random()
+]
 
 bias = random.random()
 
@@ -36,19 +39,24 @@ learning_rate = 0.01
 for step in range(1000):
     total_error = 0
 
-    for input, expected in training_data:
+    for inputs, expected in training_data:
 
-        prediction = input * weight + bias
+        prediction = (
+            inputs[0] * weights[0]
+            + inputs[1] * weights[1]
+            + bias
+        )
 
         # Get the error
         error = prediction - expected
 
-        # Get the gradients
-        weight_gradient = error * input
+        weight1_gradient = error * inputs[0]
+        weight2_gradient = error * inputs[1]
         bias_gradient = error
 
         # Update Parameters
-        weight -= learning_rate * weight_gradient
+        weights[0] -= learning_rate * weight1_gradient
+        weights[1] -= learning_rate * weight2_gradient
         bias -= learning_rate * bias_gradient
 
         # Increase error score.
@@ -58,25 +66,8 @@ for step in range(1000):
         print(f"Step {step}: error={total_error:.4f}")
 
 print()
-print(f"Weight: {weight:.4f}")
-print(f"Bias:   {bias:.4f}")
-
-print()
-print("Predictions:")
-
-for input, expected in training_data:
-    prediction = input * weight + bias
-
-    print(
-        f"{input} -> {prediction:.2f} "
-        f"(expected {expected})"
-    )
-
-print()
-print("New predictions:")
-
-for input in [6, 7, 10, 20, 100]:
-    prediction = input * weight + bias
-    print(f"{input} -> {prediction:.2f}")
+print(f"Weight 1: {weights[0]:.4f}")
+print(f"Weight 2: {weights[1]:.4f}")
+print(f"Bias:     {bias:.4f}")
 
 
