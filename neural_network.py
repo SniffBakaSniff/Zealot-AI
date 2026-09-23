@@ -1,73 +1,164 @@
-import random
+import torch
+import torch.nn as nn
+from torch.utils.data import TensorDataset, DataLoader
 
-def neuron(inputs, weights, bias):
-    output = bias
-    for x, weight in zip(inputs, weights):
-        output += x * weight
+class MyNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
 
-    return output
+        self.layer1 = nn.Linear(1, 10)
+        self.layer2 = nn.Linear(10, 1)
 
-def layer(inputs, weights, biases):
-    outputs = []
+    def forward(self, x):
+        x = self.layer1(x)
+        x = torch.relu(x)
+        x = self.layer2(x)
 
-    for neuron_weights, bias in zip(weights, biases):
-        outputs.append(
-            neuron(inputs, neuron_weights, bias)
+        return x
+
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
+
+model = MyNetwork().to(device)
+
+best_loss = float("inf")
+best_state = None
+
+# Training Data
+x = torch.tensor([
+    [1.0],
+    [2.0],
+    [3.0],
+    [4.0],
+    [5.0],
+    [6.0],
+    [7.0],
+    [8.0],
+    [9.0],
+    [10.0],
+])
+
+y = torch.tensor([
+    [1.0],
+    [4.0],
+    [9.0],
+    [16.0],
+    [25.0],
+    [36.0],
+    [49.0],
+    [64.0],
+    [81.0],
+    [100.0],
+])
+
+# Scaling the data
+x_min = x.min()
+x_max = x.max()
+
+y_min = y.min()
+y_max = y.max()
+
+x_scaled = (x - x_min) / (x_max - x_min)
+y_scaled = (y - y_min) / (y_max - y_min)
+
+# Making the dataset and mini batching
+dataset = TensorDataset(x_scaled, y_scaled)
+
+loader = DataLoader(
+    dataset,
+    batch_size=2,
+    shuffle=True
+)
+
+loss_function = nn.MSELoss()
+
+# The optimizer
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0.01
+)
+
+# Training Montage
+for epoch in range(5000):
+
+    total_loss = 0
+
+    for batch_x, batch_y in loader:
+
+        batch_x = batch_x.to(device)
+        batch_y = batch_y.to(device)
+
+        prediction = model(batch_x)
+
+        loss = loss_function(
+            prediction,
+            batch_y
         )
 
-    return outputs
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-# Our training data with an underlying relationship of `output = (x1 * 2 + x2 * 3) + 1`
-training_data = [
-    ([1, 2], 9),
-    ([2, 1], 8),
-    ([3, 2], 13),
-    ([4, 1], 12),
-    ([5, 3], 20),
-]
+        total_loss += loss.item()
 
-# Our training data has to input values therefore we need 1 weights
-weights = [
-    random.random(),
-    random.random()
-]
+    # Average loss across all batches
+    epoch_loss = total_loss / len(loader)
 
-bias = random.random()
-
-learning_rate = 0.01
-
-for step in range(1000):
-    total_error = 0
-
-    for inputs, expected in training_data:
-
-        prediction = (
-            inputs[0] * weights[0]
-            + inputs[1] * weights[1]
-            + bias
+    if epoch % 100 == 0:
+        print(
+            f"Epoch: {epoch}\n"
+            f"Loss={epoch_loss:.10f}"
         )
 
-        # Get the error
-        error = prediction - expected
+    # Save the best model
+    if epoch_loss < best_loss:
 
-        weight1_gradient = error * inputs[0]
-        weight2_gradient = error * inputs[1]
-        bias_gradient = error
+        best_loss = epoch_loss
 
-        # Update Parameters
-        weights[0] -= learning_rate * weight1_gradient
-        weights[1] -= learning_rate * weight2_gradient
-        bias -= learning_rate * bias_gradient
+        best_state = {
+            key: value.clone()
+            for key, value in model.state_dict().items()
+        }
 
-        # Increase error score.
-        total_error += error ** 2
+# Restore the best model
+model.load_state_dict(best_state)
 
-    if step % 100 == 0:
-        print(f"Step {step}: error={total_error:.4f}")
+print("Best loss:", best_loss)
 
 print()
-print(f"Weight 1: {weights[0]:.4f}")
-print(f"Weight 2: {weights[1]:.4f}")
-print(f"Bias:     {bias:.4f}")
+print("Final predictions:")
 
+with torch.no_grad():
 
+    prediction_scaled = model(
+        x_scaled.to(device)
+    )
+
+    final_loss = loss_function(
+        prediction_scaled,
+        y_scaled.to(device)
+    )
+
+    prediction_original = (
+        prediction_scaled * (y_max - y_min)
+        + y_min
+    )
+
+    print("Scaled predictions:")
+    print(prediction_scaled)
+
+    print()
+    print("Final scaled loss:", final_loss.item())
+
+print()
+print("Predictions:")
+
+for input_value, prediction in zip(
+    x,
+    prediction_original
+):
+    print(
+        f"{input_value.item():.0f} -> "
+        f"{prediction.item():.2f}"
+    )
