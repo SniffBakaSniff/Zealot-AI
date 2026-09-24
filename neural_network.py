@@ -17,7 +17,7 @@ class MyNetwork(nn.Module):
         return x
 
 device = torch.device(
-    "cuda" if torch.cuda.is_available() else "cpu"
+    "cpu"
 )
 
 model = MyNetwork().to(device)

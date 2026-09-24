@@ -10,7 +10,7 @@ weight = 0.5
 bias = 0
 ```
 
-our neuron calculates `2 * 0.5 + 0 = 0.5` but lets say our expected value is `5`.
+our neuron calculates `2 * 0.5 + 0 = 1` but lets say our expected value is `5`.
 ```
 prediction = 1
 expected = 5
