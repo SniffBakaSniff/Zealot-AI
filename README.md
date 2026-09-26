@@ -1,1 +1,3 @@
-WEll it was fun while it lasted but i saw what actually had to be done for something that is trash and decided that im not cut out for this and will be resuming my quit on programming... maybe for good this time.
+I Un-quit... xD
+
+Idk where im gonna take this project but im gonna keep at it.
